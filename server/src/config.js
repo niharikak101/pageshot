@@ -278,7 +278,7 @@ var conf = convict({
   enableUserSettings: {
     doc: "If true, the user can see the settings page and connect their device to their firefox account",
     format: Boolean,
-    default: false,
+    default: true,
     env: "USER_SETTINGS",
     arg: "user-settings"
   }

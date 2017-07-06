@@ -16,7 +16,8 @@ const {
   registerAccount,
   fetchProfileData,
   saveProfileData,
-  disconnectDevice
+  disconnectDevice,
+  checkAccountId
 } = require("./users");
 const dbschema = require("./dbschema");
 const express = require("express");
@@ -218,6 +219,7 @@ app.use(function(req, res, next) {
     authInfo = decodeAuthHeader(authHeader);
   } else {
     authInfo.deviceId = cookies.get("user", {signed: true});
+    authInfo.accountId = cookies.get("accountid", {signed: true});
     let abTests = cookies.get("abtests", {signed: true});
     if (abTests) {
       abTests = b64DecodeJson(abTests);
@@ -230,6 +232,9 @@ app.use(function(req, res, next) {
     if (config.debugGoogleAnalytics) {
       req.userAnalytics = req.userAnalytics.debug();
     }
+  }
+  if (authInfo.accountId) {
+    req.accountId = authInfo.accountId;
   }
   req.cookies = cookies;
   req.cookies._csrf = cookies.get("_csrf"); // csurf expects a property
@@ -244,6 +249,7 @@ function decodeAuthHeader(header) {
   /** Decode a string header in the format {deviceId}:{deviceIdSig};abtests={b64thing}:{sig} */
   // Since it's treated as opaque, we'll use a fragile regex
   let keygrip = dbschema.getKeygrip();
+   // FIXME: this doesn't test for accountId yet
   let match = /^([^:]{1,255}):([^;]{1,255});abTests=([^:]{1,1500}):(.{0,255})$/.exec(header);
   if (!match) {
     // FIXME: log, Sentry error
@@ -500,6 +506,7 @@ window.location = ${redirectUrlJs};
 
 app.post("/api/register", function(req, res) {
   let vars = req.body;
+  let accountId = checkAccountId(vars.deviceId);
   let canUpdate = vars.deviceId === req.deviceId;
   if (!vars.deviceId) {
     mozlog.error("bad-api-register", {msg: "Bad register request", vars: JSON.stringify(vars, null, "  ")});
@@ -513,7 +520,7 @@ app.post("/api/register", function(req, res) {
     avatarurl: vars.avatarurl || null
   }, canUpdate).then(function(userAbTests) {
     if (userAbTests) {
-      sendAuthInfo(req, res, {deviceId: vars.deviceId, userAbTests});
+      sendAuthInfo(req, res, {deviceId: vars.deviceId, accountId, userAbTests});
       // FIXME: send GA signal?
     } else {
       sendRavenMessage(req, "Attempted to register existing user", {
@@ -531,7 +538,7 @@ app.post("/api/register", function(req, res) {
 });
 
 function sendAuthInfo(req, res, params) {
-  let { deviceId, userAbTests } = params;
+  let { deviceId, accountId, userAbTests } = params;
   if (deviceId.search(/^[a-zA-Z0-9_-]{1,255}$/) == -1) {
     // FIXME: add logging message with deviceId
     throw new Error("Bad deviceId");
@@ -540,8 +547,11 @@ function sendAuthInfo(req, res, params) {
   let keygrip = dbschema.getKeygrip();
   let cookies = new Cookies(req, res, {keys: keygrip});
   cookies.set("user", deviceId, {signed: true, sameSite: 'lax'});
+  if (accountId) {
+    cookies.set("accountid", accountId, {signed: true, sameSite: 'lax'});
+  }
   cookies.set("abtests", encodedAbTests, {signed: true, sameSite: 'lax'});
-  let authHeader = `${deviceId}:${keygrip.sign(deviceId)};abTests=${encodedAbTests}:${keygrip.sign(encodedAbTests)}`;
+  let authHeader = `${deviceId}:${keygrip.sign(deviceId)};abTests=${encodedAbTests}:${keygrip.sign(encodedAbTests)};accountId=${accountId}`;
   let responseJson = {
     ok: "User created",
     sentryPublicDSN: config.sentryPublicDSN,
@@ -573,10 +583,15 @@ app.post("/api/login", function(req, res) {
         deviceId: vars.deviceId,
         userAbTests
       };
+      let accountId = checkAccountId(vars.deviceId).then((accountId) => {
+        sendParams.accountId = accountId;
+      });
       let sendParamsPromise = Promise.resolve(sendParams);
       if (vars.ownershipCheck) {
         sendParamsPromise = Shot.checkOwnership(vars.ownershipCheck, vars.deviceId).then((isOwner) => {
-          sendParams.isOwner = isOwner;
+          sendParams.isOwner = Promise.resolve(Shot.getRawValue(vars.ownershipCheck, vars.deviceId).then((data) => {
+            isOwner ? isOwner : (accountId == data.accountId);
+          }));
           return sendParams;
         });
       }
@@ -673,7 +688,10 @@ app.post("/api/delete-shot", csrfProtection, function(req, res) {
     simpleResponse(res, "Not logged in", 401);
     return;
   }
-  Shot.deleteShot(req.backend, req.body.id, req.deviceId).then((result) => {
+  if (req.accountId) {
+    simpleResponse(res, "ok", 200);
+  }
+  Shot.deleteShot(req.backend, req.body.id, req.deviceId, req.accountId).then((result) => {
     if (result) {
       simpleResponse(res, "ok", 200);
     } else {

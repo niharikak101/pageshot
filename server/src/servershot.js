@@ -380,6 +380,7 @@ Shot.get = function(backend, id, deviceId) {
       json.docTitle = rawValue.title;
     }
     let shot = new Shot(rawValue.userid, backend, id, json);
+    shot.accountId = rawValue.accountId;
     shot.urlIfDeleted = rawValue.url;
     shot.expireTime = rawValue.expireTime;
     shot.deleted = rawValue.deleted;
@@ -412,7 +413,8 @@ Shot.getRawValue = function(id, deviceId) {
   if (!id) {
     throw new Error("Empty id: " + id);
   }
-  let query = `SELECT value, deviceid, url, title, expire_time, deleted, block_type FROM data WHERE id = $1`;
+  let query = `SELECT value, deviceid, url, title, expire_time, deleted, block_type, devices.accountid FROM data, devices
+  WHERE data.deviceid = devices.id AND data.id = $1`;
   let params = [id];
   if (deviceId) {
     query += ` AND deviceid = $2`;
@@ -433,7 +435,8 @@ Shot.getRawValue = function(id, deviceId) {
       title: row.title,
       expireTime: row.expire_time,
       deleted: row.deleted,
-      blockType: row.block_type
+      blockType: row.block_type,
+      accountId: row.accountid
     };
   });
 };
