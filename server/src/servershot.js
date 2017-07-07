@@ -443,7 +443,10 @@ Shot.getRawValue = function(id, deviceId) {
 
 Shot.checkOwnership = function(shotId, deviceId) {
   return db.select(
-    `SELECT id FROM data WHERE id = $1 AND deviceid = $2`,
+    `SELECT id FROM data WHERE id = $1 AND deviceid = $2
+     UNION
+     SELECT accounts.id FROM accounts, devices WHERE accounts.id = devices.accountid
+          AND devices.id = $2`,
     [shotId, deviceId]
   ).then((rows) => {
     return !!rows.length;
@@ -531,12 +534,11 @@ Shot.getShotsForDevice = function(backend, deviceId, searchQuery) {
 Shot.setExpiration = function(backend, shotId, deviceId, expiration) {
   if (expiration === 0) {
     return db.update(
-      `UPDATE data
+      `UPDATE data, devices
        SET expire_time = NULL
        WHERE id = $1
-             AND deviceid = $2
       `,
-      [shotId, deviceId]
+      [shotId]
     );
   }
   if (typeof expiration != "number") {
@@ -549,29 +551,39 @@ Shot.setExpiration = function(backend, shotId, deviceId, expiration) {
     `UPDATE data
      SET expire_time = NOW() + ($1 || ' SECONDS')::INTERVAL
      WHERE id = $2
-           AND deviceid = $3
     `,
-    [expiration, shotId, deviceId]
+    [expiration, shotId]
   );
 };
 
-Shot.deleteShot = function(backend, shotId, deviceId) {
-  return Shot.get(backend, shotId, deviceId)
+Shot.deleteShot = function(backend, shotId, deviceId, accountId) {
+  let shotAccountId;
+  return Shot.get(backend, shotId)
     .then((shot) => {
       const clipRewrites = new ClipRewrites(shot);
+      shotAccountId = shot.accountId;
       clipRewrites.clear();
       return db.transaction((client) => {
         return clipRewrites.commit(client);
       });
     })
     .then(() => {
-      return db.update(
-        `DELETE FROM data
-         WHERE id = $1
-               AND deviceid = $2
-        `,
-        [shotId, deviceId]
-      );
+      if(accountId == shotAccountId) {
+        return db.update(
+          `DELETE FROM data
+           WHERE id = $1
+          `,
+          [shotId]
+        );
+      } else {
+        return db.update(
+          `DELETE FROM data
+           WHERE id = $1
+                 AND deviceid = $2
+          `,
+          [shotId, deviceId]
+        );
+      }
     });
 };
 

@@ -589,9 +589,7 @@ app.post("/api/login", function(req, res) {
       let sendParamsPromise = Promise.resolve(sendParams);
       if (vars.ownershipCheck) {
         sendParamsPromise = Shot.checkOwnership(vars.ownershipCheck, vars.deviceId).then((isOwner) => {
-          sendParams.isOwner = Promise.resolve(Shot.getRawValue(vars.ownershipCheck, vars.deviceId).then((data) => {
-            isOwner ? isOwner : (accountId == data.accountId);
-          }));
+          sendParams.isOwner = isOwner;
           return sendParams;
         });
       }
@@ -688,9 +686,6 @@ app.post("/api/delete-shot", csrfProtection, function(req, res) {
     simpleResponse(res, "Not logged in", 401);
     return;
   }
-  if (req.accountId) {
-    simpleResponse(res, "ok", 200);
-  }
   Shot.deleteShot(req.backend, req.body.id, req.deviceId, req.accountId).then((result) => {
     if (result) {
       simpleResponse(res, "ok", 200);
@@ -730,7 +725,7 @@ app.post("/api/set-title/:id/:domain", csrfProtection, function(req, res) {
     simpleResponse(res, "Not logged in", 401);
     return;
   }
-  Shot.get(req.backend, shotId, req.deviceId).then((shot) => {
+  Shot.get(req.backend, shotId).then((shot) => {
     if (!shot) {
       simpleResponse(res, "No such shot", 404);
       return;
