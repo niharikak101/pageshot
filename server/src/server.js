@@ -16,7 +16,8 @@ const {
   registerAccount,
   fetchProfileData,
   saveProfileData,
-  disconnectDevice
+  disconnectDevice,
+  retrieveAccount
 } = require("./users");
 const dbschema = require("./dbschema");
 const express = require("express");
@@ -218,6 +219,7 @@ app.use(function(req, res, next) {
     authInfo = decodeAuthHeader(authHeader);
   } else {
     authInfo.deviceId = cookies.get("user", {signed: true});
+    authInfo.accountId = cookies.get("accountid", {signed: true});
     let abTests = cookies.get("abtests", {signed: true});
     if (abTests) {
       abTests = b64DecodeJson(abTests);
@@ -230,6 +232,9 @@ app.use(function(req, res, next) {
     if (config.debugGoogleAnalytics) {
       req.userAnalytics = req.userAnalytics.debug();
     }
+  }
+  if (authInfo.accountId) {
+    req.accountId = authInfo.accountId;
   }
   req.cookies = cookies;
   req.cookies._csrf = cookies.get("_csrf"); // csurf expects a property
@@ -500,6 +505,7 @@ window.location = ${redirectUrlJs};
 
 app.post("/api/register", function(req, res) {
   let vars = req.body;
+  let accountId = linkAccount(vars.deviceId);
   let canUpdate = vars.deviceId === req.deviceId;
   if (!vars.deviceId) {
     mozlog.error("bad-api-register", {msg: "Bad register request", vars: JSON.stringify(vars, null, "  ")});
@@ -513,7 +519,7 @@ app.post("/api/register", function(req, res) {
     avatarurl: vars.avatarurl || null
   }, canUpdate).then(function(userAbTests) {
     if (userAbTests) {
-      sendAuthInfo(req, res, {deviceId: vars.deviceId, userAbTests});
+      sendAuthInfo(req, res, {deviceId: vars.deviceId, accountId, userAbTests});
       // FIXME: send GA signal?
     } else {
       sendRavenMessage(req, "Attempted to register existing user", {
@@ -531,7 +537,7 @@ app.post("/api/register", function(req, res) {
 });
 
 function sendAuthInfo(req, res, params) {
-  let { deviceId, userAbTests } = params;
+  let { deviceId, accountId, userAbTests } = params;
   if (deviceId.search(/^[a-zA-Z0-9_-]{1,255}$/) == -1) {
     // FIXME: add logging message with deviceId
     throw new Error("Bad deviceId");
@@ -540,6 +546,9 @@ function sendAuthInfo(req, res, params) {
   let keygrip = dbschema.getKeygrip();
   let cookies = new Cookies(req, res, {keys: keygrip});
   cookies.set("user", deviceId, {signed: true, sameSite: 'lax'});
+  if (accountId) {
+    cookies.set("accountid", accountId, {signed: true, sameSite: 'lax'});
+  }
   cookies.set("abtests", encodedAbTests, {signed: true, sameSite: 'lax'});
   let authHeader = `${deviceId}:${keygrip.sign(deviceId)};abTests=${encodedAbTests}:${keygrip.sign(encodedAbTests)}`;
   let responseJson = {
@@ -573,10 +582,13 @@ app.post("/api/login", function(req, res) {
         deviceId: vars.deviceId,
         userAbTests
       };
+      let accountId = retrieveAccount(vars.deviceId).then((accountId) => {
+        sendParams.accountId = accountId;
+      });
       let sendParamsPromise = Promise.resolve(sendParams);
       if (vars.ownershipCheck) {
-        sendParamsPromise = Shot.checkOwnership(vars.ownershipCheck, vars.deviceId).then((isOwner) => {
-          sendParams.isOwner = isOwner;
+        sendParamsPromise = Shot.checkOwnership(vars.ownershipCheck, vars.deviceId, accountId).then((isOwner) => {
+           sendParams.isOwner = isOwner;
           return sendParams;
         });
       }
@@ -673,7 +685,7 @@ app.post("/api/delete-shot", csrfProtection, function(req, res) {
     simpleResponse(res, "Not logged in", 401);
     return;
   }
-  Shot.deleteShot(req.backend, req.body.id, req.deviceId).then((result) => {
+  Shot.deleteShot(req.backend, req.body.id, req.deviceId, req.accountId).then((result) => {
     if (result) {
       simpleResponse(res, "ok", 200);
     } else {
@@ -712,9 +724,13 @@ app.post("/api/set-title/:id/:domain", csrfProtection, function(req, res) {
     simpleResponse(res, "Not logged in", 401);
     return;
   }
-  Shot.get(req.backend, shotId, req.deviceId).then((shot) => {
+  Shot.get(req.backend, shotId).then((shot) => {
     if (!shot) {
       simpleResponse(res, "No such shot", 404);
+      return;
+    }
+    if (req.accountId && shot.accountId != req.accountId) {
+      simpleResponse(res, "Shot not Owned", 401);
       return;
     }
     shot.userTitle = userTitle;
