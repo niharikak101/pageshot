@@ -456,7 +456,11 @@ class Body extends React.Component {
   }
 
   renderEditor(clip) {
-    return <Editor clip={clip}></Editor>
+    return <Editor clip={clip} onCancelEdit={this.onCancelEdit.bind(this)}></Editor>
+  }
+
+  onCancelEdit(imageEditing) {
+    this.setState({imageEditing});
   }
 
   clickedInstallExtension() {
