@@ -6,26 +6,49 @@ let pos, context, editor;
 exports.Editor = class Editor extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      tool: 'none'
+    };
   }
 
   render() {
     let canvasHeight = document.body.scrollHeight - 100;
-    return <div className="main-container">
-      <img src={this.props.clipUrl} height="auto"/>
-      <div className="canvas-container" id="canvas-container">
-        <canvas className="editor highlighter" id="editor" ref="editor" height={canvasHeight} width={window.innerWidth}></canvas>
+    return <div>
+      <div className="editor-header">
+        <button id="highlighter" onClick={this.onClickHighlight.bind(this)}>highlighter</button>
+        <button id="pen" onClick={this.onClickPen.bind(this)}>Pen</button>
+        <button id="text" onClick={this.onClickPen.bind(this)}>Text</button>
+        <button id="" onClick={this.onClickPen.bind(this)}>Pen</button>
+      </div>
+      <div className="main-container">
+        <img src={this.props.clip.image.url} style={{height: "auto", width: this.props.clip.image.dimensions.x + "px", maxWidth: "80%"}}/>
+        <div className="canvas-container" id="canvas-container">
+          <canvas className={`editor ${this.state.tool}`} id="editor" ref="editor" height={canvasHeight} width={window.innerWidth}></canvas>
+        </div>
       </div>
     </div>
   }
 
-  componentDidMount() {
+  onClickHighlight() {
+    this.setState({tool:'highlighter'});
+    this.opacity = 0.1;
     this.edit();
+  }
+
+  onClickPen() {
+    this.setState({tool: 'pen'});
+    this.opacity = 1;
+    this.edit();
+  }
+
+  componentDidMount() {
   }
 
   edit() {
     pos = { x: 0, y: 0 };
     editor = document.getElementById("editor");
     context = this.refs.editor.getContext('2d');
+    context.strokeStyle = `rgb(244, 238, 66, ${this.opacity})`;
     document.body.style.margin = 0;
     window.addEventListener("resize", this.resize);
     document.querySelector("#canvas-container").addEventListener("mousemove", this.draw)
@@ -48,9 +71,8 @@ exports.Editor = class Editor extends React.Component {
     if (e.buttons !== 1) return;
     context.beginPath();
 
-    context.lineWidth = 25;
+    context.lineWidth = 15;
     context.lineCap = 'round';
-    context.strokeStyle = 'rgb(244, 238, 66)';
 
     context.moveTo(pos.x, pos.y);
     var rect = editor.getBoundingClientRect();

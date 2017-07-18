@@ -306,7 +306,17 @@ body {
   height: 100%;
 }
 
+.editor-header {
+  z-index: 9999;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: $grid-unit * 5;
+}
+
 .main-container {
+  z-index: 9999;
   position: absolute;
   left: 0;
   top: $grid-unit * 5;
@@ -327,8 +337,4 @@ body {
   top: 0;
   left: 0;
   overflow: hidden;
-}
-
-.highlighter {
-  mix-blend-mode: multiply;
 }

@@ -377,10 +377,11 @@ class Body extends React.Component {
       myShotsHref = "/";
     }
 
+    let clip;
     let clipUrl = null;
     if (clipNames.length) {
       let clipId = clipNames[0];
-      let clip = this.props.shot.getClip(clipId);
+      clip = this.props.shot.getClip(clipId);
       clipUrl = clip.image.url;
     }
 
@@ -400,7 +401,7 @@ class Body extends React.Component {
 
     return (
       <reactruntime.BodyTemplate {...this.props}>
-        { this.state.imageEditing ? this.renderEditor(clipUrl) : null}
+        { this.state.imageEditing ? this.renderEditor(clip) : null}
         <div id="frame" className="inverse-color-scheme full-height column-space">
           { renderGetFirefox ? this.renderFirefoxRequired() : null }
         <div className="frame-header default-color-scheme">
@@ -454,8 +455,8 @@ class Body extends React.Component {
     this.setState({imageEditing: !this.state.imageEditing});
   }
 
-  renderEditor(clipUrl) {
-    return <Editor clipUrl={clipUrl}></Editor>
+  renderEditor(clip) {
+    return <Editor clip={clip}></Editor>
   }
 
   clickedInstallExtension() {
