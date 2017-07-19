@@ -1,7 +1,6 @@
 const React = require("react");
-const sendEvent = require("./browser-send-event.js");
 
-let pos, context, editor;
+let pos, context, editor, highlightContext;
 
 exports.Editor = class Editor extends React.Component {
   constructor(props) {
@@ -28,8 +27,10 @@ exports.Editor = class Editor extends React.Component {
         <button id="clear" onClick={this.onClickClear.bind(this)}>Clear</button>
       </div>
       <div className="main-container">
-        <img src={this.props.clip.image.url} style={{height: "auto", width: this.props.clip.image.dimensions.x + "px", maxWidth: "80%"}}/>
+        <img id="image" src={this.props.clip.image.url} style={{height: "auto", width: this.props.clip.image.dimensions.x + "px", maxWidth: "80%"}}/>
         <div className="canvas-container" id="canvas-container">
+          <canvas className="image-holder" id="image-holder" ref="image" height={ 2 * canvasHeight } width={ 2 * window.innerWidth } style={{height: canvasHeight, width: window.innerWidth}}></canvas>
+          <canvas className="highlighter" id="highlighter" ref="highlighter" height={canvasHeight} width={window.innerWidth}></canvas>
           <canvas className="editor" id="editor" ref="editor" height={canvasHeight} width={window.innerWidth}></canvas>
         </div>
       </div>
@@ -49,7 +50,7 @@ exports.Editor = class Editor extends React.Component {
   }
 
   onClickErase() {
-    this.setState({tool: 'erase'});
+    this.setState({tool: 'eraser'});
   }
 
   onClickCancel() {
@@ -61,30 +62,38 @@ exports.Editor = class Editor extends React.Component {
 
   onClickClear() {
     context.clearRect(0, 0, editor.width, editor.height);
+    highlightContext.clearRect(0, 0, editor.width, editor.height);
   }
 
   onClickHighlight() {
     this.setState({tool: 'highlighter'});
-    this.opacity = `22`;
   }
 
   onClickPen() {
     this.setState({tool: 'pen'});
-    this.opacity = `FF`;
   }
 
   onClickArrow() {
-    document.querySelector("#canvas-container").removeEventListener("mousemove", this.draw);
+    this.setState({tool: 'arrow'});
   }
 
   onClickRectangle() {
-    this.setState({tool:'rectangle'});
-    this.opacity = `FF`;
+    this.setState({tool: 'rectangle'});
   }
 
   componentDidMount() {
     editor = document.getElementById("editor");
     context = this.refs.editor.getContext('2d');
+    highlightContext = this.refs.highlighter.getContext('2d');
+    let imageCanvas = document.getElementById("image-holder");
+    let imageContext = this.refs.image.getContext('2d');
+    let img = document.getElementById("image");
+    let width = img.width;
+    let height = img.height;
+    // From https://blog.headspin.com/?p=464, we oversample the canvas for improved image quality
+    imageContext.scale(2, 2);
+    imageContext.drawImage(img, (imageCanvas.width / 4) - (width / 2), (imageCanvas.height / 4) - (height / 2), width, height);
+    img.style.display = 'none';
   }
 
   drawRectangle(e) {
@@ -92,35 +101,56 @@ exports.Editor = class Editor extends React.Component {
     var rect = editor.getBoundingClientRect();
     pos.x = e.clientX - rect.left,
     pos.y = e.clientY - rect.top
-    context.strokeRect(pos.x, pos.y, 50 , 50);
+    context.strokeRect(pos.x, pos.y, 50, 50);
   }
 
   edit() {
     pos = { x: 0, y: 0 };
-    if (this.state.tool == 'erase') {
+    if (this.state.tool == 'eraser') {
       context.globalCompositeOperation = 'destination-out';
       context.strokeStyle = 'rgba(255,0,0,0.5);';
     } else {
-      context.strokeStyle = `${this.state.color}${this.opacity}`;
+      context.strokeStyle = this.state.color;
+      highlightContext.strokeStyle = this.state.color;
       context.globalCompositeOperation = 'source-over';
     }
     context.lineWidth = this.state.size;
     document.body.style.margin = 0;
     window.addEventListener("resize", this.resize);
-    if (this.state.tool == 'highlighter' || this.state.tool == 'pen' || this.state.tool == 'erase') {
+    if (this.state.tool == 'highlighter' || this.state.tool == 'pen' || this.state.tool == 'eraser') {
       document.querySelector("#canvas-container").addEventListener("mousemove", this.draw)
       document.querySelector("#canvas-container").addEventListener("mousedown", this.setPosition);
       document.querySelector("#canvas-container").addEventListener("mouseenter", this.setPosition);
       document.querySelector("#canvas-container").removeEventListener("mousedown", this.drawRectangle);
+      document.querySelector("#canvas-container").removeEventListener("mousemove", this.highlight);
     } else if (this.state.tool == 'rectangle') {
       document.querySelector("#canvas-container").removeEventListener("mousemove", this.draw);
       document.querySelector("#canvas-container").removeEventListener("mousedown", this.setPosition);
       document.querySelector("#canvas-container").removeEventListener("mouseenter", this.setPosition);
+      document.querySelector("#canvas-container").removeEventListener("mousemove", this.highlight);
       document.querySelector("#canvas-container").addEventListener("mousedown", this.drawRectangle);
+    }
+    if (this.state.tool == 'highlighter') {
+      document.querySelector("#canvas-container").removeEventListener("mousemove", this.draw)
+      document.querySelector("#canvas-container").addEventListener("mousedown", this.setPosition);
+      document.querySelector("#canvas-container").addEventListener("mouseenter", this.setPosition);
+      document.querySelector("#canvas-container").addEventListener("mousemove", this.highlight);
     }
   }
 
-  highlight() {
+  highlight(e) {
+    if (e.buttons !== 1) return;
+    highlightContext.lineWidth = 20;
+    highlightContext.strokeStyle = 'yellow';
+    highlightContext.beginPath();
+    highlightContext.lineCap = 'round';
+    highlightContext.moveTo(pos.x, pos.y);
+    var rect = editor.getBoundingClientRect();
+    pos.x = e.clientX - rect.left,
+    pos.y = e.clientY - rect.top
+    highlightContext.lineTo(pos.x, pos.y);
+
+    highlightContext.stroke();
   }
 
   setPosition(e) {
@@ -140,7 +170,7 @@ exports.Editor = class Editor extends React.Component {
 
     context.lineCap = 'round';
     context.moveTo(pos.x, pos.y);
-    var rect = editor.getBoundingClientRect();
+    let rect = editor.getBoundingClientRect();
     pos.x = e.clientX - rect.left,
     pos.y = e.clientY - rect.top
     context.lineTo(pos.x, pos.y);

@@ -6,8 +6,8 @@ const { Footer } = require("../../footer-view");
 const sendEvent = require("../../browser-send-event.js");
 const { ShareButton } = require("../../share-buttons");
 const { TimeDiff } = require("./time-diff");
-const { Editor } = require("../../editor");
 const reactruntime = require("../../reactruntime");
+const { Editor } = require("../../editor");
 
 class Clip extends React.Component {
   constructor(props) {
