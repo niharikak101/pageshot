@@ -5,7 +5,7 @@ const { Localized } = require("fluent-react/compat");
 const { Footer } = require("../../footer-view");
 const sendEvent = require("../../browser-send-event.js");
 const { ShareButton } = require("../../share-buttons");
-const { TimeDiff } = require("./time-diff");
+const { TimeDiff, intervalDescription } = require("./time-diff");
 const reactruntime = require("../../reactruntime");
 const { Editor } = require("../../editor");
 
@@ -396,9 +396,12 @@ class Body extends React.Component {
       // We use background-image so if the image is broken it just doesn't show:
       favicon = <div style={{backgroundImage: `url("${shot.favicon}")`}} className="favicon" />;
     }
+<<<<<<< HEAD
 
     const shotPageDownload = <Localized id="shotPageDownload"><span className="download-text">Download</span></Localized>;
 
+=======
+>>>>>>> add saving
     return (
       <reactruntime.BodyTemplate {...this.props}>
         { this.state.imageEditing ? this.renderEditor(clip) : null}
@@ -418,7 +421,7 @@ class Body extends React.Component {
             </div>
           </div>
           <div className="shot-alt-actions">
-            { editButton }
+            { this.props.disableAnnotations ? null : editButton }
             { trashOrFlagButton }
             <ShareButton abTests={this.props.abTests} clipUrl={clipUrl} shot={shot} isOwner={this.props.isOwner} staticLink={this.props.staticLink} renderExtensionNotification={renderExtensionNotification} isExtInstalled={this.props.isExtInstalled} />
             <Localized id="shotPageDownloadShot">

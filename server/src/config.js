@@ -275,12 +275,20 @@ var conf = convict({
     env: "CDN",
     arg: "cdn"
   },
+<<<<<<< HEAD
   enableUserSettings: {
     doc: "If true, the user can see the settings page and connect their device to their firefox account",
     format: Boolean,
     default: false,
     env: "USER_SETTINGS",
     arg: "user-settings"
+  },
+  disableAnnotations: {
+    doc: "if true, then disable shot annotations",
+    format: Boolean,
+    default: false,
+    env: "DISABLE_ANNOTATIONS",
+    arg: "disable-annotations"
   }
 });
 
