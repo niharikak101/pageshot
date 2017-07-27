@@ -247,12 +247,17 @@
 
 .trash,
 .flag,
-.share {
+.share,
+.edit {
   background-size: $grid-unit $grid-unit;
   background-repeat: no-repeat;
   background-position: center center;
   margin-right: $grid-unit * 0.5;
   transition: background-image 150ms $bezier;
+}
+
+.edit {
+  background-image: url("../img/edit.svg")
 }
 
 .trash {
@@ -290,4 +295,40 @@
   &:active {
     background-image: url("../img/flag-active.svg");
   }
+}
+
+html {
+  min-height: 100%;
+  position: relative;
+}
+
+body {
+  height: 100%;
+}
+
+.main-container {
+  position: absolute;
+  left: 0;
+  top: $grid-unit * 5;
+  height: calc(100% - 100px);
+  width: 100%;
+  background-color: #fff;
+  text-align: center;
+}
+
+.main-container img {
+  margin: 0 auto;
+  margin-top: 20px;
+  max-width: 80%;
+}
+
+.canvas-container .editor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.highlighter {
+  mix-blend-mode: multiply;
 }

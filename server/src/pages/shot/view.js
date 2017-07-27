@@ -6,6 +6,7 @@ const { Footer } = require("../../footer-view");
 const sendEvent = require("../../browser-send-event.js");
 const { ShareButton } = require("../../share-buttons");
 const { TimeDiff } = require("./time-diff");
+const { Editor } = require("../../editor");
 const reactruntime = require("../../reactruntime");
 
 class Clip extends React.Component {
@@ -13,7 +14,8 @@ class Clip extends React.Component {
     super(props);
     this.state = {
       loading: true,
-      imageDisplay: "none"
+      imageDisplay: "none",
+      imageEditing: false
     };
   }
 
@@ -340,14 +342,24 @@ class Body extends React.Component {
     }
 
     let trashOrFlagButton;
+    let editButton;
     if (this.props.isOwner) {
+<<<<<<< HEAD
       trashOrFlagButton = <Localized id="shotPageDeleteButton">
         <button className="button transparent trash" title="Delete this shot permanently" onClick={ this.onClickDelete.bind(this) }></button>
       </Localized>;
+      editButton = <button className="button transparent trash" title="Edit this image" onClick={ this.onClickEdit.bind(this) }>
+=======
+      trashOrFlagButton = <button className="button transparent trash" title="Delete this shot permanently" onClick={ this.onClickDelete.bind(this) }>
+      </button>;
+      editButton = <button className="button transparent edit" title="Edit this image" onClick={ this.onClickEdit.bind(this) }>
+>>>>>>> highlighter tool ui
+      </button>;
     } else {
       trashOrFlagButton = <Localized id="shotPageAbuseButton">
         <button className="button transparent flag" title="Report this shot for abuse, spam, or other problems" onClick={ this.onClickFlag.bind(this) }></button>
       </Localized>;
+      editButton = null;
     }
 
     let myShotsHref = "/shots";
@@ -388,6 +400,7 @@ class Body extends React.Component {
 
     return (
       <reactruntime.BodyTemplate {...this.props}>
+        { this.state.imageEditing ? this.renderEditor(clipUrl) : null}
         <div id="frame" className="inverse-color-scheme full-height column-space">
           { renderGetFirefox ? this.renderFirefoxRequired() : null }
         <div className="frame-header default-color-scheme">
@@ -404,6 +417,7 @@ class Body extends React.Component {
             </div>
           </div>
           <div className="shot-alt-actions">
+            { editButton }
             { trashOrFlagButton }
             <ShareButton abTests={this.props.abTests} clipUrl={clipUrl} shot={shot} isOwner={this.props.isOwner} staticLink={this.props.staticLink} renderExtensionNotification={renderExtensionNotification} isExtInstalled={this.props.isExtInstalled} />
             <Localized id="shotPageDownloadShot">
@@ -434,6 +448,14 @@ class Body extends React.Component {
       </div>
       <a className="close" onClick={ this.doCloseBanner.bind(this) }></a>
     </div>;
+  }
+
+  onClickEdit() {
+    this.setState({imageEditing: !this.state.imageEditing});
+  }
+
+  renderEditor(clipUrl) {
+    return <Editor clipUrl={clipUrl}></Editor>
   }
 
   clickedInstallExtension() {
