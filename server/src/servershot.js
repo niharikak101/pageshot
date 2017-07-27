@@ -569,18 +569,19 @@ Shot.setExpiration = function(backend, shotId, deviceId, expiration, accountId) 
   })
 };
 
-Shot.deleteShot = function(backend, shotId, deviceId, accountId) {
-  let id;
-  return db.select(
-    `SELECT devices.id
-     FROM data, devices
-     WHERE data.id = $1 AND (devices.id = $2 OR devices.accountid = $3)
-        AND data.deviceid = devices.id
-      `,
-      [shotId, deviceId, accountId]
-  ).then((rows) => {
-    id = rows[0].id;
-    return Shot.get(backend, shotId, id)
+Shot.saveEdit = function(backend, shotId, deviceId, url) {
+  return db.update(
+    `UPDATE data
+     SET url = $1
+     WHERE id = $2
+           AND deviceid = $3
+    `,
+    [url, shotId, deviceId]
+  );
+}
+
+Shot.deleteShot = function(backend, shotId, deviceId) {
+  return Shot.get(backend, shotId, deviceId)
     .then((shot) => {
       const clipRewrites = new ClipRewrites(shot);
       clipRewrites.clear();
@@ -597,8 +598,7 @@ Shot.deleteShot = function(backend, shotId, deviceId, accountId) {
         [shotId, id]
       );
     });
-  })
-};
+  };
 
 Shot.deleteEverythingForDevice = function(backend, deviceId) {
   return db.select(

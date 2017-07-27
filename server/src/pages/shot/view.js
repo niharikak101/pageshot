@@ -459,11 +459,16 @@ class Body extends React.Component {
   }
 
   renderEditor(clip) {
-    return <Editor clip={clip} onCancelEdit={this.onCancelEdit.bind(this)}></Editor>
+    return <Editor clip={clip} onCancelEdit={this.onCancelEdit.bind(this)} onSaveEdit={this.onSaveEdit.bind(this)}></Editor>
   }
 
   onCancelEdit(imageEditing) {
     this.setState({imageEditing});
+  }
+
+  onSaveEdit(url) {
+    console.log("utl" + url);
+    this.props.controller.saveEditedShot(this.props.shot, url);
   }
 
   clickedInstallExtension() {

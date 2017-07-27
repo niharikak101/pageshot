@@ -773,6 +773,27 @@ app.post("/api/set-expiration", csrfProtection, function(req, res) {
   });
 });
 
+app.post("/api/save-edit", csrfProtection, function(req, res) {
+  if (!req.deviceId) {
+    sendRavenMessage(req, "Attempt to add annotations without login");
+    simpleResponse(res, "Not logged in", 401);
+    return;
+  }
+  let shotId = req.body.id;
+  let url = req.body.url;
+  Shot.saveEdit(req.backend, shotId, req.deviceId, url).then((result) => {
+    if (result) {
+      simpleResponse(res, "ok", 200);
+    } else {
+      sendRavenMessage(req, "Attempt to edit shot that does not exist");
+      simpleResponse(res, "No such shot", 404);
+    }
+  }).catch((err) => {
+    errorResponse(res, "Error: could not save annotations on shot", err);
+  });
+});
+
+
 app.get("/images/:imageid", function(req, res) {
   let embedded = req.query.embedded;
   let download = req.query.download;

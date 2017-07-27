@@ -99,6 +99,21 @@ exports.changeShotExpiration = function(shot, expiration) {
   req.send(`id=${encodeURIComponent(shot.id)}&expiration=${encodeURIComponent(expiration)}&_csrf=${encodeURIComponent(model.csrfToken)}`);
 };
 
+exports.saveEditedShot = function(shot, shotUrl) {
+  let url = model.backend + "/api/save-edit";
+  let req = new XMLHttpRequest();
+  req.open("POST", url);
+  req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+  req.onload = function() {
+    if (req.status >= 300) {
+      window.alert("Error saving edited shot: " + req.status + " " + req.statusText);
+    } else {
+      location.href = model.backend + "/shots";
+    }
+  };
+  req.send(`id=${encodeURIComponent(shot.id)}&url=${encodeURIComponent(shotUrl)}&_csrf=${encodeURIComponent(model.csrfToken)}`);
+}
+
 exports.deleteShot = function(shot) {
   let url = model.backend + "/api/delete-shot";
   let req = new XMLHttpRequest();

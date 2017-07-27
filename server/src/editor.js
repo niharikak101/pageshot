@@ -27,7 +27,7 @@ exports.Editor = class Editor extends React.Component {
         <button id="clear" onClick={this.onClickClear.bind(this)}>Clear</button>
       </div>
       <div className="main-container">
-        <img id="image" src={this.props.clip.image.url} style={{height: "auto", width: this.props.clip.image.dimensions.x + "px", maxWidth: "80%"}}/>
+        <img id="image" src={this.props.clip.image.url} style={{height: this.props.clip.image.dimensions.y, width: this.props.clip.image.dimensions.x + "px"}}/>
         <div className="canvas-container" id="canvas-container">
           <canvas className="image-holder" id="image-holder" ref="image" height={ 2 * canvasHeight } width={ 2 * window.innerWidth } style={{height: canvasHeight, width: window.innerWidth}}></canvas>
           <canvas className="highlighter" id="highlighter" ref="highlighter" height={canvasHeight} width={window.innerWidth}></canvas>
@@ -61,10 +61,8 @@ exports.Editor = class Editor extends React.Component {
     this.imageContext.drawImage(editor, 0, 0);
     this.imageContext.globalCompositeOperation = 'multiply';
     this.imageContext.drawImage(highlighter, 0, 0);
-    editor.style.display = 'none';
-    highlighter.style.display = 'none';
-    let url = this.imageCanvas.toDataURL("image/png");
-    window.open(this.imageCanvas.toDataURL("image/png"));
+    // this.props.onSaveEdit(dataUrl);
+    window.open(this.imageCanvas.toDataURL());
   }
 
   onClickClear() {
@@ -108,7 +106,7 @@ exports.Editor = class Editor extends React.Component {
 
   drawRectangle(e) {
     pos = { x: 0, y: 0 };
-    var rect = editor.getBoundingClientRect();
+    let rect = editor.getBoundingClientRect();
     pos.x = e.clientX - rect.left,
     pos.y = e.clientY - rect.top
     context.strokeRect(pos.x, pos.y, 50, 50);

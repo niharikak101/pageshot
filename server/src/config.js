@@ -275,7 +275,6 @@ var conf = convict({
     env: "CDN",
     arg: "cdn"
   },
-<<<<<<< HEAD
   enableUserSettings: {
     doc: "If true, the user can see the settings page and connect their device to their firefox account",
     format: Boolean,
