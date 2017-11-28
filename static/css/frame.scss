@@ -284,6 +284,12 @@
   }
 }
 
+.crop-button {
+  background-image: url("../img/crop.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 html {
   min-height: 100%;
   position: relative;
@@ -400,6 +406,28 @@ body {
 
 .image-holder {
   z-index: 0;
+}
+
+.crop-tool {
+  top: $grid-unit * 4;
+  left: 0;
+  right: 0;
+  height: 50px;
+  width: 50px;
+  max-width: 100%;
+  max-height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  resize: both;
+  overflow: hidden;
+}
+
+.resizer {
+  position:absolute;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  border-radius: 10px;
+  background-color: rgb(255, 255, 255);
 }
 
 .centered {
