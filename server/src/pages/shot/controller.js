@@ -118,12 +118,14 @@ exports.deleteShot = function(shot) {
   req.send(`id=${encodeURIComponent(shot.id)}&_csrf=${encodeURIComponent(model.csrfToken)}`);
 };
 
-exports.saveEdit = function(shot, shotUrl) {
+exports.saveEdit = function(shot, shotUrl, dimensions) {
   var url = model.backend + "/api/save-edit";
   var body = JSON.stringify({
     shotId: shot.id,
     _csrf: model.csrfToken,
-    url: shotUrl
+    url: shotUrl,
+    x: dimensions.x,
+    y: dimensions.y
   });
   var req = new Request(url, {
     method: 'POST',

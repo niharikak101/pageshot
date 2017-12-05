@@ -447,8 +447,8 @@ class Body extends React.Component {
     }
   }
 
-  onClickSave(dataUrl) {
-    this.props.controller.saveEdit(this.props.shot, dataUrl);
+  onClickSave(dataUrl, dimensions) {
+    this.props.controller.saveEdit(this.props.shot, dataUrl, dimensions);
   }
 
   onCancelEdit(imageEditing) {

@@ -1,12 +1,11 @@
 const React = require("react");
 const sendEvent = require("../../browser-send-event.js");
 
-let cropTool, cropToolBar;
+let cropToolBar;
 var lineOffset = 4;
-var anchrSize = 4;
 
 var mousedown = false;
-var clickedArea = {box: -1, pos:'o'};
+var clickedArea = {box: -1, pos: 'o'};
 var x1 = -1;
 var y1 = -1;
 var x2 = -1;
@@ -37,8 +36,6 @@ exports.Editor = class Editor extends React.Component {
   render() {
     let penState = this.state.tool == "pen" ? 'active' : 'inactive';
     let highlighterState = this.state.tool == "highlighter" ? 'active' : 'inactive';
-    let canvasHeight = this.props.clip.image.dimensions.y;
-    let canvasWidth = this.props.clip.image.dimensions.x;
     let toolBar = (<div className="annotation-tools">
       <button className={`button transparent crop-button`} id="crop" onClick={this.onClickCrop.bind(this)} title="crop"></button>
       <button className={`button transparent pen-button ${penState}`} id="pen" onClick={this.onClickPen.bind(this)} title="pen"></button>
@@ -56,10 +53,10 @@ exports.Editor = class Editor extends React.Component {
       </div>
       <div className="main-container inverse-color-scheme">
         <div className="canvas-container" id="canvas-container" ref={(canvasContainer) => this.canvasContainer = canvasContainer}>
-          <canvas className="image-holder centered" id="image-holder" ref={(image) => { this.imageCanvas = image }} height={ canvasHeight } width={ canvasWidth } style={{height: canvasHeight, width: canvasWidth}}></canvas>
-          <canvas className="highlighter centered" id="highlighter" ref={(highlighter) => { this.highlighter = highlighter }} height={canvasHeight} width={canvasWidth}></canvas>
-          <canvas className={"editor centered " + this.state.tool} id="editor" ref={(editor) => { this.editor = editor }} height={canvasHeight} width={canvasWidth}></canvas>
-          <canvas className="crop-tool centered" id="crop-tool" ref={(cropper) => { this.cropper = cropper }} height={canvasHeight} width={canvasWidth}></canvas>
+          <canvas className="image-holder centered" id="image-holder" ref={(image) => { this.imageCanvas = image }} height={ this.canvasHeight } width={ this.canvasWidth } style={{height: this.canvasHeight, width: this.canvasWidth}}></canvas>
+          <canvas className="highlighter centered" id="highlighter" ref={(highlighter) => { this.highlighter = highlighter }} height={this.canvasHeight} width={this.canvasWidth}></canvas>
+          <canvas className={"editor centered " + this.state.tool} id="editor" ref={(editor) => { this.editor = editor }} height={this.canvasHeight} width={this.canvasWidth}></canvas>
+          <canvas className="crop-tool centered" id="crop-tool" ref={(cropper) => { this.cropper = cropper }} height={this.canvasHeight} width={this.canvasWidth}></canvas>
         </div>
       </div>
     </div>
@@ -67,12 +64,11 @@ exports.Editor = class Editor extends React.Component {
 
   componentDidUpdate() {
     if (this.state.tool != 'crop') {
-      cropTool = null;
       cropToolBar = null;
       this.cropper.removeEventListener("mousemove", this.mousemove);
       this.cropper.removeEventListener("mouseout", this.mouseout);
-      this.cropper.removeEventListener("mousedown", this.mousedown, false);
-      this.cropper.removeEventListener("mouseup", this.mouseup, false);
+      this.cropper.removeEventListener("mousedown", this.mousedown);
+      this.cropper.removeEventListener("mouseup", this.mouseup);
     }
     this.edit();
   }
@@ -96,11 +92,11 @@ exports.Editor = class Editor extends React.Component {
     if (y1 < 0) {
       y1 = 0
     }
-    if (x2 > this.imageCanvas.width) {
-      x2 = this.imageCanvas.width;
+    if (x2 > this.canvasWidth) {
+      x2 = this.canvasWidth;
     }
-    if (y2 > this.imageCanvas.height) {
-      y2 = this.imageCanvas.height;
+    if (y2 > this.canvasHeight) {
+      y2 = this.canvasHeight;
     }
     let cropWidth = x2 - x1;
     let cropHeight = y2 - y1;
@@ -112,11 +108,24 @@ exports.Editor = class Editor extends React.Component {
     croppedContext.drawImage(this.editor, x1, y1, croppedImage.width, croppedImage.height, 0, 0, croppedImage.width, croppedImage.height);
     croppedContext.globalCompositeOperation = 'multiply';
     croppedContext.drawImage(this.highlighter, x1, y1, croppedImage.width, croppedImage.height, 0, 0, croppedImage.width, croppedImage.height);
-    window.open(croppedImage.toDataURL("image/png"), '_blank');
+    this.canvasWidth = cropWidth;
+    this.canvasHeight = cropHeight;
+    let img = new Image();
+    let imageContext = this.imageCanvas.getContext('2d');
+    img.crossOrigin = 'Anonymous';
+    let width = cropWidth;
+    let height = cropHeight;
+    img.onload = () => {
+      imageContext.drawImage(img, 0, 0, width, height);
+    }
+    this.imageContext = imageContext;
+    img.src = croppedImage.toDataURL("image/png");
+    this.setState({image: 'cropped'});
+    this.edit();
+    this.onClickCancelCrop();
   }
 
   onClickCancelCrop() {
-    cropTool = null;
     cropToolBar = null;
     this.cropper.getContext('2d').clearRect(0, 0, this.cropper.width, this.cropper.height);
     boxes = [];
@@ -140,7 +149,7 @@ exports.Editor = class Editor extends React.Component {
       }
     }
 
-  clickedArea = {box: -1, pos:'o'};
+  clickedArea = {box: -1, pos: 'o'};
   tmpBox = null;
   mousedown = false;
   }
@@ -169,46 +178,46 @@ exports.Editor = class Editor extends React.Component {
     }
   }
   mousedown = false;
-  clickedArea = {box: -1, pos:'o'};
+  clickedArea = {box: -1, pos: 'o'};
   tmpBox = null;
-};
+}
 
   findCurrentArea(x, y) {
   for (let i = 0; i < boxes.length; i++) {
     var box = boxes[i];
     let xCenter = box.x1 + (box.x2 - box.x1) / 2;
     let yCenter = box.y1 + (box.y2 - box.y1) / 2;
-    if (box.x1 - lineOffset <  x && x < box.x1 + lineOffset) {
-      if (box.y1 - lineOffset <  y && y < box.y1 + lineOffset) {
-        return {box: i, pos:'tl'};
-      } else if (box.y2 - lineOffset <  y && y < box.y2 + lineOffset) {
-        return {box: i, pos:'bl'};
-      } else if (yCenter - lineOffset <  y && y < yCenter + lineOffset) {
-        return {box: i, pos:'l'};
+    if (box.x1 - lineOffset < x && x < box.x1 + lineOffset) {
+      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+        return {box: i, pos: 'tl'};
+      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+        return {box: i, pos: 'bl'};
+      } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
+        return {box: i, pos: 'l'};
       }
     } else if (box.x2 - lineOffset < x && x < box.x2 + lineOffset) {
-      if (box.y1 - lineOffset <  y && y < box.y1 + lineOffset) {
-        return {box: i, pos:'tr'};
-      } else if (box.y2 - lineOffset <  y && y < box.y2 + lineOffset) {
-        return {box: i, pos:'br'};
-      } else if (yCenter - lineOffset <  y && y < yCenter + lineOffset) {
-        return {box: i, pos:'r'};
+      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+        return {box: i, pos: 'tr'};
+      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+        return {box: i, pos: 'br'};
+      } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
+        return {box: i, pos: 'r'};
       }
-    } else if (xCenter - lineOffset <  x && x < xCenter + lineOffset) {
-      if (box.y1 - lineOffset <  y && y < box.y1 + lineOffset) {
-        return {box: i, pos:'t'};
-      } else if (box.y2 - lineOffset <  y && y < box.y2 + lineOffset) {
-        return {box: i, pos:'b'};
-      } else if (box.y1 - lineOffset <  y && y < box.y2 + lineOffset) {
-        return {box: i, pos:'i'};
+    } else if (xCenter - lineOffset < x && x < xCenter + lineOffset) {
+      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+        return {box: i, pos: 't'};
+      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+        return {box: i, pos: 'b'};
+      } else if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
+        return {box: i, pos: 'i'};
       }
-    } else if (box.x1 - lineOffset <  x && x < box.x2 + lineOffset) {
-      if (box.y1 - lineOffset <  y && y < box.y2 + lineOffset) {
-        return {box: i, pos:'i'};
+    } else if (box.x1 - lineOffset < x && x < box.x2 + lineOffset) {
+      if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
+        return {box: i, pos: 'i'};
       }
     }
   }
-  return {box: -1, pos:'o'};
+  return {box: -1, pos: 'o'};
 }
 
   mousemove(e) {
@@ -263,9 +272,8 @@ exports.Editor = class Editor extends React.Component {
             y2: boxY2,
             lineWidth: 2,
             color: 'white'};
-  } else {
-    return null;
   }
+  return null;
 }
 
   redraw() {
@@ -284,6 +292,7 @@ exports.Editor = class Editor extends React.Component {
   }
 
   drawBoxOn(box, context) {
+    let controllerSize = 4;
     let xCenter = box.x1 + (box.x2 - box.x1) / 2;
     let yCenter = box.y1 + (box.y2 - box.y1) / 2;
 
@@ -299,15 +308,15 @@ exports.Editor = class Editor extends React.Component {
 
     context.fillStyle = box.color;
 
-    context.fillRect(box.x1 - anchrSize, box.y1 - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(box.x1 - anchrSize, yCenter - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(box.x1 - anchrSize, box.y2 - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(xCenter - anchrSize, box.y1 - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(xCenter - anchrSize, yCenter - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(xCenter - anchrSize, box.y2 - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(box.x2 - anchrSize, box.y1 - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(box.x2 - anchrSize, yCenter - anchrSize, 2 * anchrSize, 2 * anchrSize);
-    context.fillRect(box.x2 - anchrSize, box.y2 - anchrSize, 2 * anchrSize, 2 * anchrSize);
+    context.fillRect(box.x1 - controllerSize, box.y1 - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(box.x1 - controllerSize, yCenter - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(box.x1 - controllerSize, box.y2 - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(xCenter - controllerSize, box.y1 - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(xCenter - controllerSize, yCenter - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(xCenter - controllerSize, box.y2 - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(box.x2 - controllerSize, box.y1 - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(box.x2 - controllerSize, yCenter - controllerSize, 2 * controllerSize, 2 * controllerSize);
+    context.fillRect(box.x2 - controllerSize, box.y2 - controllerSize, 2 * controllerSize, 2 * controllerSize);
   }
 
 
@@ -322,7 +331,8 @@ exports.Editor = class Editor extends React.Component {
     this.imageContext.globalCompositeOperation = 'multiply';
     this.imageContext.drawImage(this.highlighter, 0, 0);
     let dataUrl = this.imageCanvas.toDataURL();
-    this.props.onClickSave(dataUrl);
+    let dimensions = {x: this.canvasWidth, y: this.canvasHeight};
+    this.props.onClickSave(dataUrl, dimensions);
   }
 
   onClickHighlight() {
@@ -368,14 +378,14 @@ exports.Editor = class Editor extends React.Component {
       this.canvasContainer.removeEventListener("mousemove", this.draw);
       this.canvasContainer.removeEventListener("mousedown", this.setPosition);
       this.canvasContainer.removeEventListener("mouseenter", this.setPosition);
-    } else if(this.state.tool == 'crop') {
+    } else if (this.state.tool == 'crop') {
       this.canvasContainer.removeEventListener("mousemove", this.draw);
       this.canvasContainer.removeEventListener("mousedown", this.setPosition);
       this.canvasContainer.removeEventListener("mouseenter", this.setPosition);
       this.cropper.addEventListener("mousemove", this.mousemove);
       this.cropper.addEventListener("mouseout", this.mouseout);
-      this.cropper.addEventListener("mousedown", this.mousedown, false);
-      this.cropper.addEventListener("mouseup", this.mouseup, false);
+      this.cropper.addEventListener("mousedown", this.mousedown);
+      this.cropper.addEventListener("mouseup", this.mouseup);
     } else {
       this.canvasContainer.addEventListener("mousemove", this.draw);
       this.canvasContainer.addEventListener("mousedown", this.setPosition);
