@@ -17,7 +17,7 @@ var tmpBox = null;
 exports.Editor = class Editor extends React.Component {
   constructor(props) {
     super(props);
-    this.mourseout = this.mouseout.bind(this);
+    this.mouseout = this.mouseout.bind(this);
     this.mousedown = this.mousedown.bind(this);
     this.mouseup = this.mouseup.bind(this);
     this.mousemove = this.mousemove.bind(this);
@@ -86,18 +86,10 @@ exports.Editor = class Editor extends React.Component {
     let x2 = boxes[0].x2;
     let y1 = boxes[0].y1;
     let y2 = boxes[0].y2;
-    if (x1 < 0) {
-      x1 = 0;
-    }
-    if (y1 < 0) {
-      y1 = 0
-    }
-    if (x2 > this.canvasWidth) {
-      x2 = this.canvasWidth;
-    }
-    if (y2 > this.canvasHeight) {
-      y2 = this.canvasHeight;
-    }
+    x1 = x1 < 0 ? 0 : x1;
+    y1 = y1 < 0 ? 0 : y1;
+    x2 = x2 > this.canvasWidth ? this.canvasWidth : x2;
+    y2 = y2 > this.canvasHeight ? this.canvasHeight : x2;
     let cropWidth = x2 - x1;
     let cropHeight = y2 - y1;
     let croppedImage = document.createElement('canvas');
@@ -136,14 +128,14 @@ exports.Editor = class Editor extends React.Component {
     if (clickedArea.box == -1 && tmpBox != null && boxes.length < 1) {
       boxes.push(tmpBox);
     } else if (clickedArea.box != -1) {
-      var selectedBox = boxes[clickedArea.box];
+      let selectedBox = boxes[clickedArea.box];
       if (selectedBox.x1 > selectedBox.x2) {
-        var previousX1 = selectedBox.x1;
+        let previousX1 = selectedBox.x1;
         selectedBox.x1 = selectedBox.x2;
         selectedBox.x2 = previousX1;
       }
       if (selectedBox.y1 > selectedBox.y2) {
-        var previousY1 = selectedBox.y1;
+        let previousY1 = selectedBox.y1;
         selectedBox.y1 = selectedBox.y2;
         selectedBox.y2 = previousY1;
       }
@@ -164,149 +156,141 @@ exports.Editor = class Editor extends React.Component {
   }
 
   mouseout(e) {
-  if (clickedArea.box != -1) {
-    var selectedBox = boxes[clickedArea.box];
-    if (selectedBox.x1 > selectedBox.x2) {
-      var previousX1 = selectedBox.x1;
-      selectedBox.x1 = selectedBox.x2;
-      selectedBox.x2 > previousX1;
-    }
-    if (selectedBox.y1 > selectedBox.y2) {
-      var previousY1 = selectedBox.y1;
-      selectedBox.y1 = selectedBox.y2;
-      selectedBox.y2 > previousY1;
+    if (clickedArea.box != -1) {
+      let selectedBox = boxes[clickedArea.box];
+      if (selectedBox.x1 > selectedBox.x2) {
+        let previousX1 = selectedBox.x1;
+        selectedBox.x1 = selectedBox.x2;
+        selectedBox.x2 > previousX1;
+      }
+      if (selectedBox.y1 > selectedBox.y2) {
+        let previousY1 = selectedBox.y1;
+        selectedBox.y1 = selectedBox.y2;
+        selectedBox.y2 > previousY1;
     }
   }
-  mousedown = false;
-  clickedArea = {box: -1, pos: 'o'};
-  tmpBox = null;
-}
+    mousedown = false;
+    clickedArea = {box: -1, pos: 'o'};
+    tmpBox = null;
+  }
 
   findCurrentArea(x, y) {
-  for (let i = 0; i < boxes.length; i++) {
-    var box = boxes[i];
-    let xCenter = box.x1 + (box.x2 - box.x1) / 2;
-    let yCenter = box.y1 + (box.y2 - box.y1) / 2;
-    if (box.x1 - lineOffset < x && x < box.x1 + lineOffset) {
-      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
-        return {box: i, pos: 'tl'};
-      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
-        return {box: i, pos: 'bl'};
-      } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
-        return {box: i, pos: 'l'};
-      }
-    } else if (box.x2 - lineOffset < x && x < box.x2 + lineOffset) {
-      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
-        return {box: i, pos: 'tr'};
-      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
-        return {box: i, pos: 'br'};
-      } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
-        return {box: i, pos: 'r'};
-      }
-    } else if (xCenter - lineOffset < x && x < xCenter + lineOffset) {
-      if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
-        return {box: i, pos: 't'};
-      } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
-        return {box: i, pos: 'b'};
-      } else if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
-        return {box: i, pos: 'i'};
-      }
-    } else if (box.x1 - lineOffset < x && x < box.x2 + lineOffset) {
-      if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
-        return {box: i, pos: 'i'};
+    let box = boxes[0];
+    if (box) {
+      let xCenter = box.x1 + (box.x2 - box.x1) / 2;
+      let yCenter = box.y1 + (box.y2 - box.y1) / 2;
+      if (box.x1 - lineOffset < x && x < box.x1 + lineOffset) {
+        if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+          return {box: 0, pos: 'tl'};
+        } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+          return {box: 0, pos: 'bl'};
+        } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
+          return {box: 0, pos: 'l'};
+        }
+      } else if (box.x2 - lineOffset < x && x < box.x2 + lineOffset) {
+        if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+          return {box: 0, pos: 'tr'};
+        } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+          return {box: 0, pos: 'br'};
+        } else if (yCenter - lineOffset < y && y < yCenter + lineOffset) {
+          return {box: 0, pos: 'r'};
+        }
+      } else if (xCenter - lineOffset < x && x < xCenter + lineOffset) {
+        if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+          return {box: 0, pos: 't'};
+        } else if (box.y2 - lineOffset < y && y < box.y2 + lineOffset) {
+          return {box: 0, pos: 'b'};
+        } else if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
+          return {box: 0, pos: 'i'};
+        }
+      } else if (box.x1 - lineOffset < x && x < box.x2 + lineOffset) {
+        if (box.y1 - lineOffset < y && y < box.y2 + lineOffset) {
+          return {box: 0, pos: 'i'};
+        }
       }
     }
+    return {box: -1, pos: 'o'};
   }
-  return {box: -1, pos: 'o'};
-}
 
   mousemove(e) {
-  if (mousedown && clickedArea.box == -1 && boxes.length < 1) {
-    x2 = e.offsetX;
-    y2 = e.offsetY;
-    this.redraw();
-  } else if (mousedown && clickedArea.box != -1) {
-    x2 = e.offsetX;
-    y2 = e.offsetY;
-    let xOffset = x2 - x1;
-    let yOffset = y2 - y1;
-    x1 = x2;
-    y1 = y2;
-    if (clickedArea.pos == 'i' ||
-      clickedArea.pos == 'tl' ||
-      clickedArea.pos == 'l' ||
-      clickedArea.pos == 'bl') {
-      boxes[clickedArea.box].x1 += xOffset;
+    if (mousedown && clickedArea.box == -1 && boxes.length < 1) {
+      x2 = e.offsetX;
+      y2 = e.offsetY;
+      this.redraw();
+    } else if (mousedown && clickedArea.box != -1) {
+      x2 = e.offsetX;
+      y2 = e.offsetY;
+      let xOffset = x2 - x1;
+      let yOffset = y2 - y1;
+      x1 = x2;
+      y1 = y2;
+      if (clickedArea.pos == 'i' ||
+        clickedArea.pos == 'tl' ||
+        clickedArea.pos == 'l' ||
+        clickedArea.pos == 'bl') {
+        boxes[clickedArea.box].x1 += xOffset;
+      }
+      if (clickedArea.pos == 'i' ||
+        clickedArea.pos == 'tl' ||
+        clickedArea.pos == 't' ||
+        clickedArea.pos == 'tr') {
+        boxes[clickedArea.box].y1 += yOffset;
+      }
+      if (clickedArea.pos == 'i' ||
+        clickedArea.pos == 'tr' ||
+        clickedArea.pos == 'r' ||
+        clickedArea.pos == 'br') {
+        boxes[clickedArea.box].x2 += xOffset;
+      }
+      if (clickedArea.pos == 'i' ||
+        clickedArea.pos == 'bl' ||
+        clickedArea.pos == 'b' ||
+        clickedArea.pos == 'br') {
+        boxes[clickedArea.box].y2 += yOffset;
+      }
+      this.redraw();
     }
-    if (clickedArea.pos == 'i' ||
-      clickedArea.pos == 'tl' ||
-      clickedArea.pos == 't' ||
-      clickedArea.pos == 'tr') {
-      boxes[clickedArea.box].y1 += yOffset;
-    }
-    if (clickedArea.pos == 'i' ||
-      clickedArea.pos == 'tr' ||
-      clickedArea.pos == 'r' ||
-      clickedArea.pos == 'br') {
-      boxes[clickedArea.box].x2 += xOffset;
-    }
-    if (clickedArea.pos == 'i' ||
-      clickedArea.pos == 'bl' ||
-      clickedArea.pos == 'b' ||
-      clickedArea.pos == 'br') {
-      boxes[clickedArea.box].y2 += yOffset;
-    }
-    this.redraw();
   }
-}
-
- newBox(x1, y1, x2, y2) {
-  let boxX1 = x1 < x2 ? x1 : x2;
-  let boxY1 = y1 < y2 ? y1 : y2;
-  let boxX2 = x1 > x2 ? x1 : x2;
-  let boxY2 = y1 > y2 ? y1 : y2;
-  if (boxX2 - boxX1 > lineOffset * 2 && boxY2 - boxY1 > lineOffset * 2) {
-    return {x1: boxX1,
-            y1: boxY1,
-            x2: boxX2,
-            y2: boxY2,
-            lineWidth: 2,
-            color: 'white'};
-  }
-  return null;
-}
 
   redraw() {
-    var context = this.cropper.getContext('2d');
+    let boxX1 = x1 < x2 ? x1 : x2;
+    let boxY1 = y1 < y2 ? y1 : y2;
+    let boxX2 = x1 > x2 ? x1 : x2;
+    let boxY2 = y1 > y2 ? y1 : y2;
+    let context = this.cropper.getContext('2d');
     context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     context.beginPath();
-    for (let i = 0; i < boxes.length; i++) {
-      this.drawBoxOn(boxes[i], context);
+    if (boxes.length == 1) {
+      this.drawCropBox(boxes[0], context);
     }
     if (clickedArea.box == -1) {
-      tmpBox = this.newBox(x1, y1, x2, y2);
-      if (tmpBox != null) {
-        this.drawBoxOn(tmpBox, context);
+      if (boxX2 - boxX1 > lineOffset * 2 && boxY2 - boxY1 > lineOffset * 2) {
+        tmpBox = {x1: boxX1, y1: boxY1, x2: boxX2, y2: boxY2}
+      }
+      if (tmpBox) {
+        this.drawCropBox(tmpBox, context);
       }
     }
   }
 
-  drawBoxOn(box, context) {
+  drawCropBox(box, context) {
     let controllerSize = 4;
+    let lineWidth = 2;
+    let color = 'rgb(255, 255, 255)';
     let xCenter = box.x1 + (box.x2 - box.x1) / 2;
     let yCenter = box.y1 + (box.y2 - box.y1) / 2;
 
-    context.strokeStyle = box.color;
-    context.fillStyle = box.color;
+    context.strokeStyle = color;
+    context.fillStyle = color;
 
     context.rect(box.x1, box.y1, (box.x2 - box.x1), (box.y2 - box.y1));
-    context.lineWidth = box.lineWidth;
+    context.lineWidth = lineWidth;
     context.setLineDash([10, 15]);
     context.fillStyle = 'rgba(0, 0, 0, 0.5)';
     context.fillRect(box.x1, box.y1, (box.x2 - box.x1), (box.y2 - box.y1));
     context.stroke();
 
-    context.fillStyle = box.color;
+    context.fillStyle = color;
 
     context.fillRect(box.x1 - controllerSize, box.y1 - controllerSize, 2 * controllerSize, 2 * controllerSize);
     context.fillRect(box.x1 - controllerSize, yCenter - controllerSize, 2 * controllerSize, 2 * controllerSize);
@@ -394,7 +378,7 @@ exports.Editor = class Editor extends React.Component {
   }
 
   setPosition(e) {
-    var rect = this.editor.getBoundingClientRect();
+    let rect = this.editor.getBoundingClientRect();
     this.pos.x = e.clientX - rect.left,
     this.pos.y = e.clientY - rect.top
   }
