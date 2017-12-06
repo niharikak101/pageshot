@@ -314,6 +314,12 @@
   }
 }
 
+.crop-button {
+  background-image: url("../img/crop.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 html {
   min-height: 100%;
   position: relative;
@@ -430,6 +436,10 @@ body {
 
 .image-holder {
   z-index: 0;
+}
+
+.crop-tool {
+  z-index: 3;
 }
 
 .centered {
