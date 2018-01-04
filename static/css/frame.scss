@@ -442,6 +442,10 @@ body {
   z-index: 3;
 }
 
+.crop-container {
+  z-index: 4;
+}
+
 .centered {
   position: absolute;
   top: $grid-unit;
